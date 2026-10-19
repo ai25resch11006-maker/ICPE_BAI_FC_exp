@@ -1,0 +1,21 @@
+# Run outputs stay out of git (models, logs, wandb): only code, docs, helper scripts and the
+# δ-sweep result plot/table are tracked.
+runs_*/**
+!runs_*/
+!runs_*/**/
+!runs_*/**/*.sh
+!runs_stochastic_delta/tau_vs_log_delta.png
+!runs_stochastic_delta/tau_vs_log_delta.csv
+
+# old deterministic runs
+runs_delta/
+runs_fixed_confidence/
+
+# anywhere
+wandb/
+logs/
+models/
+*.pkl
+*.npz
+*.log
+__pycache__/

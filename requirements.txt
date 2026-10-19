@@ -1,0 +1,11 @@
+# Python 3.11. Exact versions of the `bai` conda environment the code was run with.
+# torch is the CUDA 12.4 build; install it from the PyTorch index, e.g.
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.5.1
+numpy==1.26.4
+pandas==2.2.3
+transformers==4.46.3
+omegaconf==2.3.0
+wandb==0.18.7
+gymnasium==1.0.0
+matplotlib==3.11.2    # only for plot_tau_vs_log_delta.py
