@@ -101,6 +101,9 @@ CONFIG = {
         #                           replay_ratio Q-steps on other fresh batches (the code behind fig. 2)
         #   'v2':                   neurips_v2 - replay_ratio rounds, one shared batch updates I then Q
         'update_scheme': 'submission',
+        # CHANGED (not in the repository): p_hat in the lambda update is the accuracy over the episodes of
+        # the last p_hat_window training steps (100 episodes each). 1 = the repository's update.
+        'p_hat_window': 1,
         
         
         # Critic network settings
