@@ -7,11 +7,13 @@ repository (https://github.com/rssalessio/icpe, branch neurips_v2, commit 7833a2
 ICPE agent. Hydra is replaced by icpe_setup.create_config. One call of this file is one run of the
 script's loop: for K arms it sets environment.bandit_env.max_value = 0.4 * K and
 environment.bandit_env.minimum_gap = 1 / K, as the script does (std 0.5 and 30,000 training steps are
-the defaults in CONFIG; the horizon default is N = 200, CHANGED from the script's 100). As in the repository, no evaluation is run here; checkpoints
+the defaults in CONFIG; the horizon default is N = 100, as in the script). The replay loop follows
+the neurips_submission branch by default (--update_scheme submission); --update_scheme v2 selects the
+neurips_v2 loop. As in the repository, no evaluation is run here; checkpoints
 are saved every training.save_frequency steps and at the end. The inference phase (Algorithm 1,
 lines 13-15) is icpe_inference.sample_trajectories on a loaded model.
 
-Usage (inside the `bai` conda environment, from this folder), the paper's runs:
+Usage (inside the `bai` conda environment, from this folder), the paper's runs (N = 100, submission loop):
     for seed in 1 2 3; for K in 14 12 10 8 6 4:
         python main.py --num_actions K --seed seed
 """
@@ -78,6 +80,8 @@ if __name__ == '__main__':
     parser.add_argument('--horizon', type=int, default=None, help='environment.horizon (N, default 200)')
     parser.add_argument('--max_training_steps', type=int, default=None, help='training.max_training_steps (default 30000)')
     parser.add_argument('--seed', type=int, default=None, help='experiment.seed (default 1)')
+    parser.add_argument('--update_scheme', choices=['submission', 'v2'], default=None,
+                        help='replay loop: submission (neurips_submission, default) or v2 (neurips_v2)')
     parser.add_argument('--delta', type=float, default=None,
                         help='target accuracy 1 - delta: sets agent.confidence_level = 1 - delta (default 0.9)')
     args = parser.parse_args()
@@ -89,6 +93,7 @@ if __name__ == '__main__':
         'training.max_training_steps': args.max_training_steps,
         'experiment.seed': args.seed,
         'agent.confidence_level': None if args.delta is None else 1 - args.delta,
+        'agent.update_scheme': args.update_scheme,
         # experiment_stochastic_fc.sh: max_value=$(awk "BEGIN{print 0.4 * $num}"), minimum_gap=$(awk "BEGIN{print 1/($num)}")
         # awk prints numbers with 6 significant digits (%.6g), e.g. 1/6 -> 0.166667, 0.4*6 -> 2.4
         'environment.bandit_env.max_value': float('%.6g' % (0.4 * K)),

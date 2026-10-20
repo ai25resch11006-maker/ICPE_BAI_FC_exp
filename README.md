@@ -2,7 +2,7 @@
 
 This folder trains and evaluates **ICPE** (Algorithm 1 of *In-Context Learning for Pure Exploration*, Russo, Welch, Pacchiano, ICLR 2026) on the paper's **stochastic Gaussian bandit** experiment in the **fixed-confidence** setting: the agent pulls arms of a K-armed bandit until it decides to stop, then names the arm it thinks is best, aiming for accuracy 1 − δ with as few pulls as possible.
 
-The algorithm code is the authors' (branch `neurips_v2` of [rssalessio/icpe](https://github.com/rssalessio/icpe)); a few changes, marked **CHANGED** in the code, are listed in [Differences from the repository](#differences-from-the-repository). Every file is explained line by line in [CODE_EXPLAINED.md](CODE_EXPLAINED.md).
+The algorithm code is the authors' (branch `neurips_v2` of [rssalessio/icpe](https://github.com/rssalessio/icpe)); by default it trains with the replay loop of branch `neurips_submission`, the code behind the paper's figure 2 (`--update_scheme v2` selects the `neurips_v2` loop). A few changes, marked **CHANGED** in the code, are listed in [Differences from the repository](#differences-from-the-repository). Every file is explained line by line in [CODE_EXPLAINED.md](CODE_EXPLAINED.md).
 
 ---
 
@@ -15,21 +15,23 @@ cd /DATA1/rf1365/BAI_Erasures/algo
 
 (On another machine, create an environment from `requirements.txt` first: see [Requirements](#requirements).)
 
-1. **Train** a model (K = 4 arms, δ = 0.1, seed 1; about 27 hours on one GPU):
+1. **Train** a model (K = 4 arms, δ = 0.1, seed 1, N = 100, `neurips_submission` replay loop; about 10–13 hours on one GPU):
 
 ```bash
-mkdir -p runs_N200/K4 && cd runs_N200/K4
+mkdir -p runs_submission/K4 && cd runs_submission/K4
 CUDA_VISIBLE_DEVICES=0 WANDB_MODE=offline PYTHONUNBUFFERED=1 nohup setsid python ../../main.py --num_actions 4 --seed 1 --delta 0.1 > train.log 2>&1 < /dev/null &
 cd ../..
 ```
 
+(For N = 200, add `--horizon 200`: about 27 hours, and the model folder ends in `_200_4`.)
+
 2. **Run inference** on one fixed bandit, 5000 seeded trajectories, when training has finished:
 
 ```bash
-python inference_fixed_env.py --model runs_N200/K4/models/sequential/StochasticGaussianBanditFixedConfidenceSequential_200_4/icpe_30000_1.pkl
+python inference_fixed_env.py --model runs_submission/K4/models/sequential/StochasticGaussianBanditFixedConfidenceSequential_100_4/icpe_30000_1.pkl
 ```
 
-3. **Read the results** in `runs_N200/K4/models/sequential/StochasticGaussianBanditFixedConfidenceSequential_200_4/inference_env0/trajectories.csv`.
+3. **Read the results** in `runs_submission/K4/models/sequential/StochasticGaussianBanditFixedConfidenceSequential_100_4/inference_env0/trajectories.csv`.
 
 The sections below explain each step and its options.
 
@@ -127,7 +129,8 @@ CUDA_VISIBLE_DEVICES=0 WANDB_MODE=offline python /DATA1/rf1365/BAI_Erasures/algo
 | Option | Meaning | Default |
 |---|---|---|
 | `--num_actions K` | number of arms K; also sets the arm-mean range to [0, 0.4K] and the minimum gap between neighbouring means to 0.4, as the authors' script does | 4 |
-| `--horizon N` | maximum pulls per episode: an episode ends when the agent takes STOP, or after N pulls if it never does | **200** (authors: 100) |
+| `--horizon N` | maximum pulls per episode: an episode ends when the agent takes STOP, or after N pulls if it never does | 100 (as the authors) |
+| `--update_scheme` | replay loop: `submission` = 5 Guesser updates then 5 Chooser updates, each on a fresh batch (branch `neurips_submission`); `v2` = 5 rounds, one shared batch per round (branch `neurips_v2`) | `submission` |
 | `--delta δ` | target error probability; the target accuracy is 1 − δ | 0.1 |
 | `--seed X` | random seed of the run | 1 |
 | `--max_training_steps S` | number of training steps | 30000 |
@@ -379,7 +382,8 @@ Evaluated with `plot_tau_vs_log_delta.py` (300 bandits × 15 trajectories per mo
 
 The algorithm code is copied from the `neurips_v2` branch (commit `7833a2f`; local clone in `../ICPE`). Not from the repository:
 
-- **CHANGED: horizon N = 200** instead of the authors' 100 (`CONFIG`, `environment.horizon`): an episode ends at STOP, or after 200 pulls if STOP is not taken. `--horizon 100` restores 100.
+- **CHANGED: replay loop of `neurips_submission` by default** (`agent.update_scheme = 'submission'`, `icpe_training.train_networks_submission`): 5 Guesser updates on fresh batches, then 5 Chooser updates on other fresh batches, as in commit `0260c4f`, the code that produced the paper's figure 2 (its results file is identical in both branches and dated 21 May 2025, before the `neurips_v2` commits). `--update_scheme v2` restores the `neurips_v2` loop (one shared batch per round) and its `np.random.rand() < 5e-4` attention-dump call. The other differences between the two branches (the unused `timestep` argument, renames, buffer dtypes) do not change training.
+- Horizon N = 100 as in the authors' script (it was 200 in an earlier version of this folder; `runs_N200/` used `--horizon 200`).
 - **CHANGED: T_ϕ fixed at 200 Guesser updates** (every 40 training steps) for any N; the repository uses `frequency_update_e_network × N`, which would give 400 with N = 200 (`icpe_training.py` L77).
 - **CHANGED: per-episode seeds in training.** Each training episode's reward noise comes from its own generator (`GaussianBanditEnv.seed`), seeded with `experiment.seed × 100,000,000 + episode number`; all seeds and means are saved in `episodes_<seed>.npz`. In the repository the noise uses the global random generator, so runs are no longer bit-identical to the repository's. `sample_trajectories` does not seed its bandits, as in the repository.
 - Hydra configuration replaced by the `CONFIG` dict and `argparse` options; models are saved under `models/sequential/` in the current folder.

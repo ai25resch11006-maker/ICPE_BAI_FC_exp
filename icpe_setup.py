@@ -41,7 +41,8 @@ from transformers import GPT2Config, GPT2Model
 # experiment_stochastic_fc.sh (horizon 100, std 0.5, max_training_steps 30000, and for K arms
 # max_value = 0.4*K, minimum_gap = 1/K; seeds 1, 2, 3; K in 14, 12, 10, 8, 6, 4).
 # max_value and minimum_gap below are those of K = 4; main.py sets them from K as the script does.
-# CHANGED (not in the repository): horizon N = 200 instead of the script's 100.
+# Horizon N = 100 as in the script. CHANGED (not in the repository): agent.update_scheme selects the
+# neurips_submission replay loop (default) or the neurips_v2 one (see icpe_training.train_networks).
 # ---------------------------------------------------------------------------
 CONFIG = {
     'experiment': {
@@ -76,7 +77,7 @@ CONFIG = {
             'minimum_gap': 0.25,
         },
         'num_actions': 4,
-        'horizon': 200,                       # CHANGED: the repository's script uses 100
+        'horizon': 100,                       # as in experiment_stochastic_fc.sh (neurips_submission)
     },
     'agent': {
         'type': 'ICPE',
@@ -95,6 +96,11 @@ CONFIG = {
         'initial_buffer_bootstrap_num_batches': 20,
         'confidence_level': 0.9,              # 1 - delta (delta = 0.1)
         'cost_learning_rate': 3e-5,
+        # CHANGED (not in the repository): which replay loop train_networks uses.
+        #   'submission' (default): neurips_submission - replay_ratio I-steps on fresh batches, then
+        #                           replay_ratio Q-steps on other fresh batches (the code behind fig. 2)
+        #   'v2':                   neurips_v2 - replay_ratio rounds, one shared batch updates I then Q
+        'update_scheme': 'submission',
         
         
         # Critic network settings
