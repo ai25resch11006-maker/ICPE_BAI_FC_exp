@@ -31,6 +31,7 @@ All code is taken from the neurips_v2 branch of the ICPE repository
 """
 from __future__ import annotations
 import os
+from collections import deque
 import numpy as np
 import torch
 import wandb
@@ -136,8 +137,19 @@ def train_networks_v2(agent) -> Tuple[Dict[str, List[float]], Dict[str, List[flo
 
 
 def update_cost(agent, log_probs: torch.Tensor, true_optimal: torch.Tensor):
-    """Line 9: lambda update, eq. (11). confidence_level = 1 - delta."""
+    """Line 9: lambda update, eq. (11). confidence_level = 1 - delta.
+
+    CHANGED (not in the repository): with agent.p_hat_window = W > 1, p_hat is the accuracy over the
+    episodes of the last W training steps (W * 100 episodes) instead of this step's 100, so that small
+    delta (target accuracy above 0.99) can be resolved. W = 1 (default) is the repository's update.
+    """
     estm_rewards_argmax = (log_probs.argmax(-1) == true_optimal).float()
+    window = int(agent.agent_cfg.get('p_hat_window', 1))
+    if window > 1:
+        if not hasattr(agent, '_p_hat_history'):
+            agent._p_hat_history = deque(maxlen=window)
+        agent._p_hat_history.append(estm_rewards_argmax.detach())
+        estm_rewards_argmax = torch.cat(list(agent._p_hat_history))
 
 
     err = agent.agent_cfg.confidence_level-estm_rewards_argmax.mean()

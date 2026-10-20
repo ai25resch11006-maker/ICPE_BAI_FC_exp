@@ -269,6 +269,27 @@ Options: `--K` (4), `--seed` (1), `--steps` (checkpoint, 30000), `--B` (300), `-
 
 ---
 
+## Fixed-instance δ sweep: ICPE vs TaS, TTPS, Uniform
+
+One instance μ is drawn once from the training prior (K = 4, `--env_seed 0`) and kept for every δ and every algorithm. For δ = e⁻ˣ, x = 0, 2, 4, 6, 8, 10, each algorithm plays 500 trajectories on it; trajectory j uses seed j for every algorithm and every δ, with common random numbers (the k-th pull of arm a returns the same reward in every run with that seed). Recorded per trajectory: stopping time τ (pulls + 1), correctness, wall-clock time.
+
+- **Baselines** (`baselines.py`, NEW): NumPy ports of the authors' TaS, TTPS (β = 0.65, ε = 0.3) and Uniform with their GLR stopping rule (σ = 0.5, minimum gap 0.4). **No horizon cap**: a trajectory runs until the stopping rule fires.
+- **ICPE**: one model per δ, trained with `runs_delta_sweep/train.sh`. Its transformers have exactly N input positions, so a trajectory cannot go past N pulls; choose N so that it is never reached (default N = 300; the baselines need up to about 270 pulls at δ = e⁻¹⁰ on the default instance). Any trajectory that reaches N without STOP is counted in `not_stopped`.
+- **λ update for small δ** (CHANGED, `--p_hat_window W`): p̂ is the accuracy over the last W training steps (100 episodes each). With the authors' W = 1, p̂ moves in steps of 0.01 and λ cannot react to targets above 0.99. `train.sh` uses W = ⌈0.1/δ⌉ (1, 1, 6, 41, 299, 2203 for x = 0…10), about 10/δ episodes; `WINDOW=1` restores the authors' update.
+
+```bash
+# 1. train the six ICPE models (one queue per GPU; ~60 GB RAM per run at N = 300)
+HORIZON=300 GPUS="0 1 2" nohup bash runs_delta_sweep/train.sh > runs_delta_sweep/train_all.log 2>&1 &
+# 2. baselines can run right away (CPU, no models needed)
+python eval_fixed_instance.py --algos TaS TTPS Uniform
+# 3. ICPE, once the models exist (GPU)
+python eval_fixed_instance.py --algos ICPE --icpe_N 300
+# 4. plots
+python plot_fixed_instance.py
+```
+
+Outputs in `runs_delta_sweep/fixed_instance/`: `environment.json` (the instance), `log<x>/<algo>.csv` (one row per trajectory), `summary.csv` (per δ and algorithm: average τ ± 95% CI, empirical error probability ± 95% CI and its rule-of-three bound 3/500 when no error is seen, average ms per trajectory), `tau_vs_log_delta.png` and `fixed_instance_panels.png` (τ, error probability, time). With 500 trajectories an error probability below about 0.006 cannot be distinguished from 0.
+
 ## Reproducing the authors' runs (N = 100)
 
 The authors' script `experiment_stochastic_fc.sh` trains seeds 1, 2, 3 and K = 14, 12, 10, 8, 6, 4 with N = 100:
