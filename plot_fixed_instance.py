@@ -2,7 +2,8 @@
 Plots for eval_fixed_instance.py (NEW CODE, not from the ICPE repository).
 
 Reads <dir>/summary.csv and <dir>/environment.json and saves
-  <dir>/tau_vs_log_delta.png        average stopping time vs log(1/delta), one line per algorithm (95% CI)
+  <dir>/tau_vs_log_delta.png        average stopping time vs log(1/delta), one line per algorithm (95% CI),
+                                    with the lower bound T*(mu) kl(delta, 1 - delta) of the fixed instance
   <dir>/fixed_instance_panels.png   (a) average stopping time, (b) empirical error probability with the
                                     target delta, (c) average wall time per trajectory
 
@@ -16,6 +17,40 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+def characteristic_time(means: np.ndarray, sigma: float) -> tuple:
+    """T*(mu) for Gaussian BAI with known variance sigma^2 (Garivier and Kaufmann, 2016).
+
+    T*(mu)^-1 = max_w min_{a != a*} (w_* w_a / (w_* + w_a)) Delta_a^2 / (2 sigma^2). At the optimum,
+    with x_a = w_a / w_*, every pair has the same value y = c_a x_a / (1 + x_a), c_a = Delta_a^2 / (2 sigma^2),
+    and sum_a x_a^2 = 1; y is found by bisection. Returns T* and the optimal weights w*.
+    """
+    best = int(np.argmax(means))
+    others = [a for a in range(len(means)) if a != best]
+    c = (means[best] - means[others]) ** 2 / (2 * sigma ** 2)
+    lo, hi = 0.0, c.min()
+    for _ in range(200):
+        y = (lo + hi) / 2
+        if np.sum((y / (c - y)) ** 2) > 1:
+            hi = y
+        else:
+            lo = y
+    x = y / (c - y)
+    w = np.zeros(len(means))
+    w[best] = 1 / (1 + x.sum())
+    w[others] = x * w[best]
+    return 1 / (w[best] * y), w
+
+
+def kl_bernoulli(p: float, q: float) -> float:
+    return p * np.log(p / q) + (1 - p) * np.log((1 - p) / (1 - q))
+
+
+def lower_bound(means: np.ndarray, sigma: float, deltas: np.ndarray) -> np.ndarray:
+    """E[tau] >= T*(mu) kl(delta, 1 - delta) for delta < 1/2 (0 for delta >= 1/2)."""
+    T, _ = characteristic_time(means, sigma)
+    return np.array([T * kl_bernoulli(d, 1 - d) if d < 0.5 else 0.0 for d in deltas])
+
 
 STYLE = {'ICPE': ('#1a54a6', 'o'), 'TaS': ('#9467bd', '^'), 'TTPS': ('#8c564b', 'x'), 'Uniform': ('#ff7f0e', 'v')}
 
@@ -32,7 +67,14 @@ def main():
     title = (f"Fixed instance μ = {np.round(env['means'], 3).tolist()} (K = {env['num_arms']}), "
              f"{n} trajectories per point")
 
+    means, sigma = np.array(env['means']), float(env['stds'][0])
+    T, w = characteristic_time(means, sigma)
+    print(f'T*(mu) = {T:.3f}, optimal weights w* = {np.round(w, 3)}')
+    xs_lb = np.linspace(0, float(df.log_inv_delta.max()), 200)
+    lb = lower_bound(means, sigma, np.exp(-xs_lb))
+
     def tau_panel(ax):
+        ax.plot(xs_lb, lb, 'k--', lw=1.2, label=rf'lower bound $T^*(\mu)\,\mathrm{{kl}}(\delta,1-\delta)$, $T^*$ = {T:.1f}')
         for algo in algos:
             d = df[df.algo == algo].sort_values('log_inv_delta')
             c, m = STYLE[algo]
