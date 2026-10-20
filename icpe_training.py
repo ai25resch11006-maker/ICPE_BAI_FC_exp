@@ -11,9 +11,11 @@ Line 10:   update phi with L_inf (eq. 7)                 -> train_estimation_net
            update theta with L_policy (eq. 9-10)         -> train_rl_nets (icpe_q_learning.py)
 Line 11:   phi_bar <- phi every T_phi steps              -> train_estimation_net
            theta_bar <- theta                            -> train_rl_nets (icpe_q_learning.py)
-In this version of the repository the networks are trained once per training step, after the
-rollout (replay_ratio rounds, each on one batch for both networks), and the learning rates decay
+The networks are trained once per training step, after the rollout, and the learning rates decay
 linearly (agent.scheduler_step). A checkpoint is saved every training.save_frequency steps.
+CHANGED: agent.update_scheme selects the replay loop of neurips_submission (default: replay_ratio
+I-steps, then replay_ratio Q-steps, each on a fresh batch) or of neurips_v2 (replay_ratio rounds, one
+shared batch per round).
 
 CHANGED (not in the repository): every training episode gets its own seed,
     seed = experiment.seed * 100,000,000 + episode number (0, 1, 2, ...),
@@ -80,7 +82,42 @@ def train_estimation_net(agent, batch: ReplayBufferSamples) -> Dict[str, List[fl
 
 
 def train_networks(agent) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
-    """Line 10: replay_ratio rounds; in each, one batch B ~ buffer updates phi, then theta."""
+    """Line 10: update phi (eq. 7) and theta (eq. 9-10) from the buffer.
+
+    CHANGED (not in the repository): agent.update_scheme selects the replay loop.
+      'submission' (default) - neurips_submission (commit 0260c4f), BaseOffPolicyAgent._train_networks:
+                               replay_ratio phi-steps on fresh batches, then replay_ratio theta-steps on
+                               other fresh batches.
+      'v2'                   - neurips_v2 (commit 7833a2f): replay_ratio rounds; in each, one batch
+                               updates phi, then theta.
+    """
+    if agent.agent_cfg.get('update_scheme', 'submission') == 'submission':
+        return train_networks_submission(agent)
+    return train_networks_v2(agent)
+
+
+def train_networks_submission(agent) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
+    """neurips_submission: all phi-steps first (fresh batches), then all theta-steps (fresh batches)."""
+    eloss, rlloss = {}, {}
+    cfg = agent.agent_cfg
+
+    if len(agent.buffer) > cfg.initial_buffer_bootstrap_num_batches * cfg.batch_size * cfg.replay_ratio:
+        if not agent.cfg.training.use_oracle_reward:
+            # Don't add last transitions to avoid leakage! if the capacity of the E network is sufficiently large it will overfit new samples
+            for _ in range(cfg.replay_ratio):
+                eloss = train_estimation_net(agent, agent.buffer.sample(cfg.batch_size, add_last_transtions=False))
+
+        # 30 so that the enetwork can bootstrap int he meantime.
+        if len(agent.buffer) > cfg.e_network_bootstrap_num_batches * cfg.batch_size * cfg.replay_ratio:
+            for _ in range(cfg.replay_ratio):
+                rlloss = train_rl_nets(agent, agent.buffer.sample(cfg.batch_size, add_last_transtions=False))
+                agent.gradient_step += 1
+
+    return eloss, rlloss
+
+
+def train_networks_v2(agent) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
+    """neurips_v2: replay_ratio rounds; in each, one batch B ~ buffer updates phi, then theta."""
     eloss, rlloss = {}, {}
 
     if len(agent.buffer) >  agent.agent_cfg.initial_buffer_bootstrap_num_batches * agent.agent_cfg.batch_size * agent.agent_cfg.replay_ratio:
@@ -215,10 +252,11 @@ def train(agent, save_path: str):
                 actions, qvalues, probs = sample_actions(agent, seq_state)    # line 6
 
 
-            # In the repository these two calls were used to save attention maps; that code is
+            # neurips_v2 only: these two calls were used to save attention maps; that code is
             # commented out inside the networks, so they only compute a forward pass. They are kept
-            # because np.random.rand() is part of the random number sequence.
-            if np.random.rand() < 5e-4:
+            # for update_scheme 'v2' because np.random.rand() is part of its random number sequence;
+            # neurips_submission has no such call.
+            if agent.agent_cfg.get('update_scheme', 'submission') == 'v2' and np.random.rand() < 5e-4:
                 with torch.no_grad(), torch.amp.autocast(agent.device, enabled=agent.use_amp):
 
                     _ = agent.i_net.forward(seq_state.state, seq_state.timestep, _save_attention=True, step=step, traj_t=t)
