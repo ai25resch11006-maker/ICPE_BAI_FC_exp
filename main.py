@@ -77,13 +77,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ICPE (Algorithm 1) - stochastic Gaussian bandits, fixed confidence')
     parser.add_argument('--num_actions', type=int, default=None,
                         help='environment.num_actions (K); also sets max_value = 0.4*K and minimum_gap = 1/K')
-    parser.add_argument('--horizon', type=int, default=None, help='environment.horizon (N, default 200)')
+    parser.add_argument('--horizon', type=int, default=None, help='environment.horizon (N, default 100)')
     parser.add_argument('--max_training_steps', type=int, default=None, help='training.max_training_steps (default 30000)')
     parser.add_argument('--seed', type=int, default=None, help='experiment.seed (default 1)')
     parser.add_argument('--update_scheme', choices=['submission', 'v2'], default=None,
                         help='replay loop: submission (neurips_submission, default) or v2 (neurips_v2)')
     parser.add_argument('--p_hat_window', type=int, default=None,
                         help='lambda update: p_hat over the last W training steps (default 1 = repository)')
+    parser.add_argument('--delta_prime', type=float, default=None,
+                        help='Prop. B.12: certify accuracy 1 - delta_prime (enables the stopping-of-training test)')
+    parser.add_argument('--eta', type=float, default=None, help='Prop. B.12 confidence parameter eta (default 0.1)')
+    parser.add_argument('--cert_rollouts', type=int, default=None, help='fresh rollouts K per test epoch (default 1000)')
+    parser.add_argument('--cert_every', type=int, default=None, help='training steps per test epoch (default 10)')
+    parser.add_argument('--cert_start', type=int, default=None, help='training step at which the test starts (default 10000)')
     parser.add_argument('--delta', type=float, default=None,
                         help='target accuracy 1 - delta: sets agent.confidence_level = 1 - delta (default 0.9)')
     args = parser.parse_args()
@@ -97,6 +103,12 @@ if __name__ == '__main__':
         'agent.confidence_level': None if args.delta is None else 1 - args.delta,
         'agent.update_scheme': args.update_scheme,
         'agent.p_hat_window': args.p_hat_window,
+        'training.certify.enabled': True if args.delta_prime is not None else None,
+        'training.certify.delta_prime': args.delta_prime,
+        'training.certify.eta': args.eta,
+        'training.certify.rollouts': args.cert_rollouts,
+        'training.certify.every': args.cert_every,
+        'training.certify.start': args.cert_start,
         # experiment_stochastic_fc.sh: max_value=$(awk "BEGIN{print 0.4 * $num}"), minimum_gap=$(awk "BEGIN{print 1/($num)}")
         # awk prints numbers with 6 significant digits (%.6g), e.g. 1/6 -> 0.166667, 0.4*6 -> 2.4
         'environment.bandit_env.max_value': float('%.6g' % (0.4 * K)),

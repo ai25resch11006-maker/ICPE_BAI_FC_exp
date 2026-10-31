@@ -56,6 +56,17 @@ CONFIG = {
         'max_training_steps': 30000,
         'use_oracle_reward': False,
         'cost_per_timestep': 0,
+        # CHANGED (not in the repository): Proposition B.12 stopping-of-training test (icpe_certify.py).
+        # Disabled unless delta_prime is set. Every `every` training steps from step `start`, K = `rollouts`
+        # fresh greedy rollouts give X_t; training stops when the running average crosses the boundary.
+        'certify': {
+            'enabled': False,
+            'delta_prime': None,
+            'eta': 0.1,
+            'rollouts': 1000,
+            'every': 10,
+            'start': 10000,
+        },
         'eval': {
             'eval_period': 100,
             'eval_num_env_instances': 10,

@@ -290,6 +290,28 @@ python plot_fixed_instance.py
 
 Outputs in `runs_delta_sweep/fixed_instance/`: `environment.json` (the instance), `log<x>/<algo>.csv` (one row per trajectory), `summary.csv` (per δ and algorithm: average τ ± 95% CI, empirical error probability ± 95% CI and its rule-of-three bound 3/500 when no error is seen, average ms per trajectory), `tau_vs_log_delta.png` and `fixed_instance_panels.png` (τ, error probability, time). With 500 trajectories an error probability below about 0.006 cannot be distinguished from 0.
 
+## Certified training: stopping training with Proposition B.12
+
+The repository trains for a fixed 30,000 steps, which does not guarantee δ-correctness for small δ. `icpe_certify.py` (NEW) implements the stopping-of-training test of App. B.1.6 (Proposition B.12): train for a target δ and certify a looser δ′ > δ. From training step `start`, every `every` steps (one test epoch t) the frozen greedy policy is run on K fresh bandits M ∼ P; X_t is their accuracy. Training stops at the first t with
+
+(1/t) Σ_{s≤t} X_s ≥ (1 − δ′) + (1/t) √( 2 (1 + (1−δ′) t / K) ln( √(1 + (1−δ′) t / K) / η ) ),
+
+and the model saved at that step is δ′-correct (on average over the prior) with probability about ≥ 1 − η − ξ (Proposition B.12).
+
+| δ′ (certified) | δ (training) | p̂ window | median test epochs (simulation, K = 1000) |
+|---|---|---|---|
+| 0.10 | 0.09 | 2 | ≈ 240 |
+| 0.05 | 0.04 | 3 | ≈ 240 |
+| 0.01 | 0.005 | 20 | ≈ 560 |
+
+```bash
+GPUS="4 5 1" HORIZON=300 nohup bash runs_certify/train.sh > runs_certify/train_all.log 2>&1 &  disown
+grep certify runs_certify/dp0.1/train.log | tail -3          # X_t, running average, boundary per test epoch
+cat runs_certify/dp0.1/models/sequential/*/certificate_1.json
+```
+
+Options of `main.py`: `--delta_prime` (enables the test), `--eta` (0.1), `--cert_rollouts` K (1000), `--cert_every` (10 training steps per test epoch), `--cert_start` (10000, fixed before training), and `--max_training_steps` as the budget if the boundary is never crossed. The test rollouts use new bandits that are never added to the replay buffer.
+
 ## Reproducing the authors' runs (N = 100)
 
 The authors' script `experiment_stochastic_fc.sh` trains seeds 1, 2, 3 and K = 14, 12, 10, 8, 6, 4 with N = 100:

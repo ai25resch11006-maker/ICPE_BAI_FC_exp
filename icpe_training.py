@@ -40,6 +40,7 @@ from icpe_setup import ReplayBufferSamples
 from icpe_sampling import sample_envs, sample_actions, mle
 from icpe_q_learning import train_rl_nets
 from icpe_inference import save
+from icpe_certify import TrainingCertificate, evaluate_accuracy
 
 
 def compute_mingaps_and_probs(means: np.ndarray, minimum_gap: float = 0) -> Tuple[np.ndarray, np.ndarray]:
@@ -240,6 +241,12 @@ def train(agent, save_path: str):
     episode_seeds, episode_means = [], []
     num_episodes = 0
 
+    # CHANGED: Proposition B.12 stopping-of-training test (disabled unless training.certify.enabled)
+    cc = agent.cfg.training.get('certify', None)
+    certify = cc is not None and bool(cc.get('enabled', False))
+    certificate = TrainingCertificate(cc.delta_prime, cc.eta, cc.rollouts) if certify else None
+    certified = False
+
     for step in range(agent.cfg.training.max_training_steps):                 # line 3
         # Sample environments                                                  # line 4
         envs = sample_envs(agent, B=B, N=N)
@@ -362,3 +369,29 @@ def train(agent, save_path: str):
             # CHANGED: save the seeds and means of all episodes so far
             np.savez(os.path.join(save_path, f'episodes_{agent.cfg.experiment.seed}.npz'),
                      seeds=np.concatenate(episode_seeds), means=np.concatenate(episode_means))
+
+        # CHANGED: Proposition B.12 test epoch -- K fresh rollouts with the frozen networks
+        if certify and agent.current_step >= cc.start and (agent.current_step - cc.start) % cc.every == 0:
+            x = evaluate_accuracy(agent, cc.rollouts)
+            crossed, avg, bnd = certificate.update(x, agent.current_step)
+            print(f'[certify] step {agent.current_step} epoch {certificate.t}: X_t={x:.4f} '
+                  f'avg={avg:.5f} boundary={bnd:.5f}', flush=True)
+            if wandb.run is not None:
+                wandb.log({'certify/X_t': x, 'certify/running_average': avg, 'certify/boundary': bnd},
+                          step=agent.current_step)
+            seed = agent.cfg.experiment.seed
+            certificate.save_history(os.path.join(save_path, f'certificate_{seed}.csv'))
+            if crossed:
+                save(agent, save_path)
+                model_file = f'icpe_{agent.current_step}_{seed}.pkl'
+                certificate.save_summary(os.path.join(save_path, f'certificate_{seed}.json'), True,
+                                         1 - agent.agent_cfg.confidence_level, model_file)
+                print(f'[certify] boundary crossed at step {agent.current_step}: model {model_file} is '
+                      f"{cc.delta_prime}-correct with confidence 1 - eta - xi (eta = {cc.eta})", flush=True)
+                certified = True
+                break
+
+    if certify and not certified:
+        certificate.save_summary(os.path.join(save_path, f'certificate_{agent.cfg.experiment.seed}.json'),
+                                 False, 1 - agent.agent_cfg.confidence_level, None)
+        print('[certify] training budget reached without crossing the boundary: NOT certified', flush=True)
