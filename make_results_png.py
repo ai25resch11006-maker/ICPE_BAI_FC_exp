@@ -7,7 +7,6 @@ Reads <dir>/summary.csv and <dir>/environment.json (written by eval_fixed_instan
 number of trajectories that never reached a_stop.
   red    : empirical error > delta  (not delta-correct on this instance)
   orange : trajectories that never reached a_stop (stopped by the horizon N instead)
-A 0 error is shown as "0 (< 3/n)": with n trajectories an error below 3/n cannot be measured.
 
 Usage: python make_results_png.py [--dir runs_delta_sweep/fixed_instance]
 """
@@ -43,7 +42,7 @@ def main():
         wrong = int(round(r.error_prob * n))
         x = r.log_inv_delta
         dlt = '1' if x == 0 else f'e^-{x:g} = {math.exp(-x):.3g}'
-        err = f'{wrong} / {n} = {r.error_prob:.4f}' if wrong else f'0 / {n}  (< {3 / n:.3f})'
+        err = f'{wrong} / {n} = {r.error_prob:.4f}'
         rows.append([dlt, r.algo, err, f'{int(r.max_tau)}', f'{r.avg_tau:.2f} ± {r.tau_ci95:.2f}',
                      f'{r.avg_wall_ms:.1f}', f'{int(r.not_stopped)}'])
         base = 'white' if int(x) % 4 == 2 else GREY          # alternate shading per delta
@@ -77,7 +76,7 @@ def main():
     ax.set_title(f'Fixed instance μ = {mu} (K = {env["num_arms"]}), best arm {env["best_arm"]}; '
                  f'trajectory j uses seed j for every algorithm and δ', fontsize=10, pad=14)
     fig.text(0.5, 0.012, 'red: empirical error > δ (not δ-correct)     orange: trajectories that hit the horizon '
-             'without a_stop     "0 / n (< 3/n)": no error seen; errors below 3/n cannot be measured',
+             'without a_stop',
              ha='center', fontsize=8, color='#444')
     fig.tight_layout(rect=(0, 0.035, 1, 0.955))
     out = os.path.join(a.dir, 'results_table.png')
