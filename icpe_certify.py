@@ -34,9 +34,10 @@ def boundary(t: int, K: int, delta_prime: float, eta: float) -> float:
 
 
 @torch.no_grad()
-def evaluate_accuracy(agent, K: int, chunk: int = 250) -> float:
-    """X_t: accuracy of the frozen greedy policy on K fresh bandits M ~ P (one trajectory each)."""
-    correct = 0.0
+def evaluate_accuracy(agent, K: int, chunk: int = 250) -> dict:
+    """X_t: accuracy of the frozen greedy policy on K fresh bandits M ~ P (one trajectory each),
+    with the average and maximum stopping time of these K test trajectories."""
+    correct, taus = 0.0, []
     for start in range(0, K, chunk):
         n = min(chunk, K - start)
         with torch.amp.autocast(agent.device, enabled=agent.use_amp):
@@ -44,7 +45,9 @@ def evaluate_accuracy(agent, K: int, chunk: int = 250) -> float:
         tau = traj.stopping_time.astype(np.int64)                              # (n, 1)
         c = np.take_along_axis(traj.rew_opt_actions, (tau - 1)[..., None], axis=-1)[..., 0]
         correct += float(c.sum())
-    return correct / K
+        taus.append(tau.ravel())
+    taus = np.concatenate(taus)
+    return {'accuracy': correct / K, 'avg_tau': float(taus.mean()), 'max_tau': int(taus.max())}
 
 
 class TrainingCertificate:
@@ -55,7 +58,7 @@ class TrainingCertificate:
         self.t, self.sum_x = 0, 0.0
         self.rows = []
 
-    def update(self, x: float, step: int):
+    def update(self, x: float, step: int, avg_tau: float = float('nan'), max_tau: int = -1):
         """Add the accuracy X_t of one test epoch; return (crossed, running average, boundary)."""
         self.t += 1
         self.sum_x += x
@@ -63,7 +66,8 @@ class TrainingCertificate:
         b = boundary(self.t, self.K, self.delta_prime, self.eta)
         crossed = avg >= b
         self.rows.append({'training_step': step, 'test_epoch': self.t, 'X_t': x,
-                          'running_average': avg, 'boundary': b, 'crossed': int(crossed)})
+                          'running_average': avg, 'boundary': b, 'crossed': int(crossed),
+                          'test_avg_tau': avg_tau, 'test_max_tau': max_tau})
         return crossed, avg, b
 
     def save_history(self, path: str):
@@ -74,9 +78,20 @@ class TrainingCertificate:
 
     def save_summary(self, path: str, certified: bool, delta: float, model_file: str | None):
         last = self.rows[-1] if self.rows else {}
+        x = np.array([r['X_t'] for r in self.rows]) if self.rows else np.zeros(0)
+        ma = np.convolve(x, np.ones(20) / 20, mode='valid') if len(x) >= 20 else x
         with open(path, 'w') as f:
             json.dump({'certified': certified, 'delta_prime': self.delta_prime, 'delta_train': delta,
-                       'eta': self.eta, 'rollouts_per_epoch': self.K, 'test_epochs': self.t,
+                       'eta': self.eta, 'rollouts_per_epoch': self.K,
+                       'T': self.t if certified else None,       # stopping time of the test (test epochs)
+                       'test_epochs': self.t,
                        'stopping_training_step': last.get('training_step'),
+                       # monotonicity check of p_t (Prop. B.12 assumes it is eventually non-decreasing):
+                       # X_t is noisy, so it is checked on a 20-epoch moving average
+                       'X_t_moving_avg_first': float(ma[0]) if len(ma) else None,
+                       'X_t_moving_avg_last': float(ma[-1]) if len(ma) else None,
+                       'X_t_moving_avg_decreases': int((np.diff(ma) < 0).sum()) if len(ma) > 1 else 0,
+                       'X_t_moving_avg_steps': max(len(ma) - 1, 0),
+                       'test_avg_tau_last': last.get('test_avg_tau'), 'test_max_tau_last': last.get('test_max_tau'),
                        'running_average': last.get('running_average'), 'boundary': last.get('boundary'),
                        'model_file': model_file}, f, indent=2)

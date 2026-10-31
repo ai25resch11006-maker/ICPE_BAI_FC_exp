@@ -145,6 +145,7 @@ def update_cost(agent, log_probs: torch.Tensor, true_optimal: torch.Tensor):
     delta (target accuracy above 0.99) can be resolved. W = 1 (default) is the repository's update.
     """
     estm_rewards_argmax = (log_probs.argmax(-1) == true_optimal).float()
+    p_hat_step = estm_rewards_argmax.mean().item()          # this step's episodes only
     window = int(agent.agent_cfg.get('p_hat_window', 1))
     if window > 1:
         if not hasattr(agent, '_p_hat_history'):
@@ -162,7 +163,8 @@ def update_cost(agent, log_probs: torch.Tensor, true_optimal: torch.Tensor):
     with torch.no_grad():
         agent._cost_multiplier.data.clamp_(min=agent.min_cost, max=1)
 
-    return {'cost': agent._cost_multiplier.item(), 'target_confidence_error': err.abs().item()}
+    return {'cost': agent._cost_multiplier.item(), 'target_confidence_error': err.abs().item(),
+            'p_hat_step': p_hat_step, 'p_hat': estm_rewards_argmax.mean().item()}
 
 
 @torch.no_grad()
@@ -247,6 +249,11 @@ def train(agent, save_path: str):
     certificate = TrainingCertificate(cc.delta_prime, cc.eta, cc.rollouts) if certify else None
     certified = False
 
+    # CHANGED: per-step training log (stopping times of the training episodes, p_hat, cost c)
+    train_log_path = os.path.join(save_path, f'training_log_{agent.cfg.experiment.seed}.csv')
+    with open(train_log_path, 'w') as f:
+        f.write('training_step,avg_tau,max_tau,p_hat_step,p_hat_used,cost_c\n')
+
     for step in range(agent.cfg.training.max_training_steps):                 # line 3
         # Sample environments                                                  # line 4
         envs = sample_envs(agent, B=B, N=N)
@@ -320,6 +327,10 @@ def train(agent, save_path: str):
 
         # Line 9: update lambda according to eq. (11)
         cost_updates = update_cost(agent, log_probs, true_optimal)
+        with open(train_log_path, 'a') as f:                     # CHANGED: one row per training step
+            f.write(f'{agent.current_step + 1},{traj_current_timestep.mean().item():.4f},'
+                    f'{int(traj_current_timestep.max().item())},{cost_updates["p_hat_step"]:.4f},'
+                    f'{cost_updates["p_hat"]:.6f},{cost_updates["cost"]:.8f}\n')
 
 
         qv = qvalues.detach().cpu().numpy().round(2)[0]
@@ -372,10 +383,12 @@ def train(agent, save_path: str):
 
         # CHANGED: Proposition B.12 test epoch -- K fresh rollouts with the frozen networks
         if certify and agent.current_step >= cc.start and (agent.current_step - cc.start) % cc.every == 0:
-            x = evaluate_accuracy(agent, cc.rollouts)
-            crossed, avg, bnd = certificate.update(x, agent.current_step)
+            res = evaluate_accuracy(agent, cc.rollouts)
+            x = res['accuracy']
+            crossed, avg, bnd = certificate.update(x, agent.current_step, res['avg_tau'], res['max_tau'])
             print(f'[certify] step {agent.current_step} epoch {certificate.t}: X_t={x:.4f} '
-                  f'avg={avg:.5f} boundary={bnd:.5f}', flush=True)
+                  f'avg={avg:.5f} boundary={bnd:.5f} test_avg_tau={res["avg_tau"]:.2f} '
+                  f'test_max_tau={res["max_tau"]}', flush=True)
             if wandb.run is not None:
                 wandb.log({'certify/X_t': x, 'certify/running_average': avg, 'certify/boundary': bnd},
                           step=agent.current_step)
