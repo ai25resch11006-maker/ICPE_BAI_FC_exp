@@ -1,0 +1,14 @@
+nohup: ignoring input
+log(1/delta)=0 (delta=1.0, N=300, p_hat_window=1) started on GPU 4 at Tue Oct 20 07:04:56 PM IST 2026
+log(1/delta)=2 (delta=0.1353352832366127, N=300, p_hat_window=1) started on GPU 5 at Tue Oct 20 07:04:56 PM IST 2026
+log(1/delta)=4 (delta=0.01831563888873418, N=300, p_hat_window=6) started on GPU 1 at Tue Oct 20 07:04:56 PM IST 2026
+log(1/delta)=0 finished on GPU 4 at Wed Oct 21 03:46:57 PM IST 2026 (exit code 0)
+log(1/delta)=6 (delta=0.0024787521766663585, N=300, p_hat_window=41) started on GPU 4 at Wed Oct 21 03:46:57 PM IST 2026
+log(1/delta)=2 finished on GPU 5 at Wed Oct 21 07:50:13 PM IST 2026 (exit code 0)
+log(1/delta)=8 (delta=0.00033546262790251185, N=300, p_hat_window=299) started on GPU 5 at Wed Oct 21 07:50:13 PM IST 2026
+log(1/delta)=4 finished on GPU 1 at Thu Oct 22 05:41:10 AM IST 2026 (exit code 0)
+log(1/delta)=10 (delta=4.5399929762484854e-05, N=300, p_hat_window=2203) started on GPU 1 at Thu Oct 22 05:41:11 AM IST 2026
+log(1/delta)=8 finished on GPU 5 at Fri Oct 23 07:39:22 AM IST 2026 (exit code 0)
+log(1/delta)=10 finished on GPU 1 at Fri Oct 23 04:52:08 PM IST 2026 (exit code 0)
+log(1/delta)=6 finished on GPU 4 at Fri Oct 23 07:05:54 PM IST 2026 (exit code 0)
+all runs finished at Fri Oct 23 07:05:54 PM IST 2026

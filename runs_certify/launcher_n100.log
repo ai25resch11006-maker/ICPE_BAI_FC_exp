@@ -1,0 +1,7 @@
+nohup: ignoring input
+polite launcher started Sat Oct 31 11:16:41 PM IST 2026: runs {0.1:0.09 0.05:0.04}, N=100, max 2 at once, GPU needs >=10000 MiB free and <=30% load, RAM >=80 GB
+2026-10-31 23:16:41 START delta'=0.1 delta=0.09 on GPU 1 (p_hat_window=2)
+2026-10-31 23:19:41 START delta'=0.05 delta=0.04 on GPU 4 (p_hat_window=3)
+2026-11-01 07:28:09 END delta'=0.1 (exit code 0)
+2026-11-01 07:44:18 END delta'=0.05 (exit code 0)
+all certified runs finished Sun Nov  1 07:44:18 AM IST 2026

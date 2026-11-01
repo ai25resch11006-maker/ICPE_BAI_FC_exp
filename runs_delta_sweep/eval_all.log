@@ -1,0 +1,50 @@
+watching log(1/delta) in {0 2 4 6 8 10} (N=300, K=4, step 30000, 500 trajectories, GPU 2), started Wed Oct 21 11:48:09 AM IST 2026
+log(1/delta)=0: training finished, evaluating at Wed Oct 21 03:48:09 PM IST 2026
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)=  0 TaS      avg tau    10.62 +- 0.51 (max 34), error 0.0960, 2.12 ms/traj, not stopped 0
+log(1/delta)=  0 TTPS     avg tau    11.82 +- 0.69 (max 63), error 0.0940, 1.57 ms/traj, not stopped 0
+log(1/delta)=  0 Uniform  avg tau    16.98 +- 0.84 (max 55), error 0.0640, 1.89 ms/traj, not stopped 0
+log(1/delta)=  0 ICPE     avg tau     1.00 +- 0.00 (max 1), error 1.0000, 11.85 ms/traj, not stopped 0
+Saved runs_delta_sweep/fixed_instance/summary.csv
+log(1/delta)=0: evaluation finished at Wed Oct 21 03:48:27 PM IST 2026 (exit code 0); table: runs_delta_sweep/fixed_instance/results_table.md
+log(1/delta)=2: training finished, evaluating at Wed Oct 21 07:58:28 PM IST 2026
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)=  2 TaS      avg tau    25.64 +- 0.99 (max 66), error 0.0060, 5.11 ms/traj, not stopped 0
+log(1/delta)=  2 TTPS     avg tau    33.31 +- 1.48 (max 137), error 0.0020, 3.85 ms/traj, not stopped 0
+log(1/delta)=  2 Uniform  avg tau    36.52 +- 1.66 (max 103), error 0.0040, 3.43 ms/traj, not stopped 0
+log(1/delta)=  2 ICPE     avg tau     7.28 +- 0.32 (max 39), error 0.1640, 55.83 ms/traj, not stopped 0
+Saved runs_delta_sweep/fixed_instance/summary.csv
+log(1/delta)=2: evaluation finished at Wed Oct 21 07:59:11 PM IST 2026 (exit code 0); table: runs_delta_sweep/fixed_instance/results_table.md
+log(1/delta)=4: training finished, evaluating at Thu Oct 22 05:49:11 AM IST 2026
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)=  4 TaS      avg tau    37.82 +- 1.22 (max 111), error 0.0000, 8.91 ms/traj, not stopped 0
+log(1/delta)=  4 TTPS     avg tau    50.53 +- 1.86 (max 166), error 0.0000, 8.00 ms/traj, not stopped 0
+log(1/delta)=  4 Uniform  avg tau    52.55 +- 2.04 (max 195), error 0.0000, 5.74 ms/traj, not stopped 0
+log(1/delta)=  4 ICPE     avg tau    20.82 +- 1.73 (max 269), error 0.0120, 168.37 ms/traj, not stopped 0
+Saved runs_delta_sweep/fixed_instance/summary.csv
+log(1/delta)=4: evaluation finished at Thu Oct 22 05:50:57 AM IST 2026 (exit code 0); table: runs_delta_sweep/fixed_instance/results_table.md
+log(1/delta)=8: training finished, evaluating at Fri Oct 23 07:40:58 AM IST 2026
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)=  8 TaS      avg tau    61.65 +- 1.62 (max 146), error 0.0000, 11.29 ms/traj, not stopped 0
+log(1/delta)=  8 TTPS     avg tau    86.82 +- 2.68 (max 232), error 0.0000, 9.49 ms/traj, not stopped 0
+log(1/delta)=  8 Uniform  avg tau    85.66 +- 2.78 (max 252), error 0.0000, 7.82 ms/traj, not stopped 0
+log(1/delta)=  8 ICPE     avg tau   239.39 +- 1.91 (max 300), error 0.0020, 1518.59 ms/traj, not stopped 1
+Saved runs_delta_sweep/fixed_instance/summary.csv
+log(1/delta)=8: evaluation finished at Fri Oct 23 07:54:26 AM IST 2026 (exit code 0); table: runs_delta_sweep/fixed_instance/results_table.md
+log(1/delta)=10: training finished, evaluating at Fri Oct 23 04:54:27 PM IST 2026
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)= 10 TaS      avg tau    73.61 +- 1.81 (max 155), error 0.0000, 12.06 ms/traj, not stopped 0
+log(1/delta)= 10 TTPS     avg tau   103.50 +- 3.10 (max 246), error 0.0000, 11.39 ms/traj, not stopped 0
+log(1/delta)= 10 Uniform  avg tau   102.57 +- 3.08 (max 272), error 0.0000, 8.74 ms/traj, not stopped 0
+log(1/delta)= 10 ICPE     avg tau   249.65 +- 1.31 (max 300), error 0.0040, 1632.35 ms/traj, not stopped 1
+Saved runs_delta_sweep/fixed_instance/summary.csv
+log(1/delta)=10: evaluation finished at Fri Oct 23 05:08:41 PM IST 2026 (exit code 0); table: runs_delta_sweep/fixed_instance/results_table.md
+log(1/delta)=6: training finished, evaluating at Fri Oct 23 07:08:41 PM IST 2026
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)=  6 TaS      avg tau    49.63 +- 1.42 (max 127), error 0.0000, 7.74 ms/traj, not stopped 0
+log(1/delta)=  6 TTPS     avg tau    68.68 +- 2.32 (max 198), error 0.0000, 7.59 ms/traj, not stopped 0
+log(1/delta)=  6 Uniform  avg tau    69.83 +- 2.43 (max 225), error 0.0000, 6.04 ms/traj, not stopped 0
+log(1/delta)=  6 ICPE     avg tau   247.88 +- 0.70 (max 276), error 0.0000, 1623.01 ms/traj, not stopped 0
+Saved runs_delta_sweep/fixed_instance/summary.csv
+log(1/delta)=6: evaluation finished at Fri Oct 23 07:22:32 PM IST 2026 (exit code 0); table: runs_delta_sweep/fixed_instance/results_table.md
+all deltas evaluated at Fri Oct 23 07:22:32 PM IST 2026

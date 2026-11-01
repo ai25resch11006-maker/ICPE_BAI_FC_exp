@@ -1,0 +1,19 @@
+{
+  "certified": true,
+  "delta_prime": 0.1,
+  "delta_train": 0.08999999999999997,
+  "eta": 0.1,
+  "rollouts_per_epoch": 1000,
+  "T": 162,
+  "test_epochs": 162,
+  "stopping_training_step": 11610,
+  "X_t_moving_avg_first": 0.92,
+  "X_t_moving_avg_last": 0.9208999999999999,
+  "X_t_moving_avg_decreases": 68,
+  "X_t_moving_avg_steps": 142,
+  "test_avg_tau_last": 8.767,
+  "test_max_tau_last": 96,
+  "running_average": 0.9145802469135804,
+  "boundary": 0.9143875513935232,
+  "model_file": "icpe_11610_1.pkl"
+}
