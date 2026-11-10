@@ -1,0 +1,7 @@
+nohup: ignoring input
+Fixed instance (env_seed 0): means [1.0411 0.218  1.4861 0.6195], best arm 2
+log(1/delta)=4.60517 TaS      avg tau    41.15 +- 1.28 (max 119), error 0.0000, 7.67 ms/traj, not stopped 0
+log(1/delta)=4.60517 TTPS     avg tau    55.54 +- 1.99 (max 166), error 0.0000, 6.13 ms/traj, not stopped 0
+log(1/delta)=4.60517 Uniform  avg tau    58.05 +- 2.21 (max 200), error 0.0000, 5.09 ms/traj, not stopped 0
+log(1/delta)=4.60517 ICPE     avg tau   273.81 +- 1.23 (max 300), error 0.0080, 492.79 ms/traj, not stopped 3
+Saved runs_certify/fixed_instance/summary.csv

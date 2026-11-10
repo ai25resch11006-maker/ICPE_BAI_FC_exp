@@ -1,0 +1,19 @@
+{
+  "certified": false,
+  "delta_prime": 0.01,
+  "delta_train": 0.0050000000000000044,
+  "eta": 0.1,
+  "rollouts_per_epoch": 1000,
+  "T": null,
+  "test_epochs": 5001,
+  "stopping_training_step": 60000,
+  "X_t_moving_avg_first": 0.95665,
+  "X_t_moving_avg_last": 0.9850000000000001,
+  "X_t_moving_avg_decreases": 2364,
+  "X_t_moving_avg_steps": 4981,
+  "test_avg_tau_last": 267.142,
+  "test_max_tau_last": 300,
+  "running_average": 0.9804429114177131,
+  "boundary": 0.9912329485306401,
+  "model_file": null
+}

@@ -2,3 +2,5 @@ nohup: ignoring input
 polite launcher started Sat Oct 31 11:16:41 PM IST 2026: runs {0.01:0.005}, N=300, max 1 at once, GPU needs >=20000 MiB free and <=30% load, RAM >=80 GB
 2026-10-31 23:16:41 waiting for delta'=0.01: our runs 0/1, free GPU 'none', RAM available 220 GB
 2026-10-31 23:21:41 START delta'=0.01 delta=0.005 on GPU 0 (p_hat_window=20)
+2026-11-08 02:36:42 END delta'=0.01 (exit code 0)
+all certified runs finished Sun Nov  8 02:36:42 AM IST 2026
